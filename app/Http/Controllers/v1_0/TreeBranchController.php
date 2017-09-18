@@ -8,16 +8,16 @@ use App\Tree;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
-class BranchController extends Controller
+class TreeBranchController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Tree $tree)
     {
-        //
+        return $tree->branches;
     }
 
     /**
@@ -36,9 +36,22 @@ class BranchController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, Tree $tree)
     {
-        //
+        // get data from request
+        $data = $request->all();
+
+        // inject tree id from tree
+        $data['tree_id'] = $tree->id;
+        
+        // get validator
+        $validator = Branch::getValidator($data);
+
+        // validate
+        $this->validator->validate();
+
+        // create and return new tree
+        return Branch::create($data);
     }
 
     /**
@@ -49,7 +62,7 @@ class BranchController extends Controller
      */
     public function show(Branch $branch)
     {
-        return $branch;
+        //
     }
 
     /**
@@ -72,17 +85,7 @@ class BranchController extends Controller
      */
     public function update(Request $request, Branch $branch)
     {
-        // get data from request
-        $data = $request->all();
-        
-        // get validator
-        $validator = Branch::getValidator($data);
-
-        // validate
-        $this->validator->validate();
-
-        // update and return branch
-        return $branch->update($data);
+        //
     }
 
     /**
@@ -93,10 +96,6 @@ class BranchController extends Controller
      */
     public function destroy(Branch $branch)
     {
-        $data = $branch->toArray();
-        
-        $branch->delete();
-
-        return $data;
+        //
     }
 }
