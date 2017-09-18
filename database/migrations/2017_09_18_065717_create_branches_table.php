@@ -29,7 +29,7 @@ class CreateBranchesTable extends Migration
             $table->unsignedInteger('sorting')->nullable();
 
             // branch content
-            $table->text('content');
+            $table->text('content')->nullable();
         });
     }
 
