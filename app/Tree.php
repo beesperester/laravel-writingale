@@ -16,12 +16,21 @@ class Tree extends BaseModel
     protected $fillable = [
         'name',
     ];
-    
+
     /**
-    * Return a hasMany relation to App\Branch.
-    *
-    * @return App\Branch
-    */
+     * Load with relations.
+     *
+     * @var array
+     */
+    protected $with = [
+        'branches',
+    ];
+
+    /**
+     * Return a hasMany relation to App\Branch.
+     *
+     * @return App\Branch
+     */
     public function branches()
     {
         return $this->hasMany('App\Branch', 'tree_id');

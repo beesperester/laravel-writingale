@@ -8,7 +8,7 @@ use App\Tree;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
-class TreeBranchController extends Controller
+class TreeBranchController extends BranchController
 {
     /**
      * Display a listing of the resource.
@@ -27,13 +27,13 @@ class TreeBranchController extends Controller
      */
     public function create()
     {
-        //
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request, Tree $tree)
@@ -43,59 +43,64 @@ class TreeBranchController extends Controller
 
         // inject tree id from tree
         $data['tree_id'] = $tree->id;
-        
+
         // get validator
         $validator = Branch::getValidator($data);
 
         // validate
         $this->validator->validate();
 
+        // reorder branches
+        $data['sorting'] = static::reorder($tree, $request->input('sorting', null), $request->input('parent_id', null));
+
         // create and return new tree
-        return Branch::create($data);
+        $branch = Branch::create($data);
+
+        return $branch;
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Branch  $branch
+     * @param \App\Branch $branch
+     *
      * @return \Illuminate\Http\Response
      */
     public function show(Branch $branch)
     {
-        //
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Branch  $branch
+     * @param \App\Branch $branch
+     *
      * @return \Illuminate\Http\Response
      */
     public function edit(Branch $branch)
     {
-        //
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Branch  $branch
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Branch              $branch
+     *
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Branch $branch)
     {
-        //
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Branch  $branch
+     * @param \App\Branch $branch
+     *
      * @return \Illuminate\Http\Response
      */
     public function destroy(Branch $branch)
     {
-        //
     }
 }
