@@ -26,6 +26,11 @@ class Tree extends BaseModel
         // 'branches:id',
     ];
 
+    /**
+     * Load relations.
+     *
+     * @var array
+    */
     static public $load_relations = [
         'branches:tree_id,parent_id,id'
     ];

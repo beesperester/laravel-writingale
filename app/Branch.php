@@ -16,7 +16,7 @@ class Branch extends BaseModel
         'content',
         'parent_id',
         'tree_id',
-        'sorting'
+        'sorting',
     ];
 
     /**
@@ -28,10 +28,23 @@ class Branch extends BaseModel
         // 'branches',
     ];
 
-    static public $load_relations = [
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'depth',
+    ];
+
+    /**
+     * Load relations.
+     *
+     * @var array
+     */
+    public static $load_relations = [
         'branches:tree_id,parent_id,id',
         'tree:id',
-        'parent:id'
     ];
 
     /**
@@ -64,6 +77,15 @@ class Branch extends BaseModel
         return $this->hasMany('App\Branch', 'parent_id');
     }
 
+    public function getDepthAttribute()
+    {
+        if ($this->parent_id) {
+            return Branch::find($this->parent_id)->depth + 1;
+        }
+
+        return 0;
+    }
+
     /**
      * Create new validator from data and rules.
      *
@@ -94,11 +116,13 @@ class Branch extends BaseModel
         return Validator::make($data, $rules);
     }
 
-    public static function allWithRelations() {
+    public static function allWithRelations()
+    {
         return static::with(static::$load_relations)->get();
     }
 
-    public function withRelations() {
+    public function withRelations()
+    {
         return $this->load(static::$load_relations);
     }
 }
