@@ -16,9 +16,11 @@ class TreeController extends Controller
      */
     public function index()
     {
-        $trees = Tree::all();
+        $trees = Tree::allWithRelations();
 
-        return $trees;
+        return [
+            'trees' => $trees
+        ];
     }
 
     /**
@@ -61,7 +63,7 @@ class TreeController extends Controller
      */
     public function show(Tree $tree)
     {
-        return $tree;
+        return $tree->withRelations();
     }
 
     /**

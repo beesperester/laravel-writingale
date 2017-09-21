@@ -18,6 +18,11 @@ class BranchController extends Controller
      */
     public function index()
     {
+        $branches = Branch::allWithRelations();
+
+        return [
+            'branches' => $branches,
+        ];
     }
 
     /**
@@ -48,17 +53,37 @@ class BranchController extends Controller
         $validator->validate();
 
         // reorder branches
-        $data['sorting'] = static::reorder($request->input('sorting'), $request->input('parent_id'), $request->input('tree_id'));
+        $reorder_result = static::reorder($request->input('sorting'), $request->input('parent_id'), $request->input('tree_id'));
+
+        list($sorting, $branches) = array_values($reorder_result);
+
+        $data['sorting'] = $sorting;
 
         // create and return new tree
         $branch = Branch::create($data);
 
-        $query = [
-            ['parent_id', '=', $request->input('parent_id')],
-            ['tree_id', '=', $request->input('tree_id')],
-        ];
+        $branches->push($branch);
 
-        return Tree::all();
+        // add affected parent branch
+        if (isset($data['parent_id'])) {
+            $branches->push(Branch::find($data['parent_id']));
+        }
+
+        // add affected trees
+        $trees = collect([]);
+
+        if (isset($data['tree_id'])) {
+            $trees->push(Tree::find($data['tree_id']));
+        }
+
+        return [
+            'trees' => $trees->map(function ($tree) {
+                return $tree->withRelations();
+            }),
+            'branches' => $branches->map(function ($branch) {
+                return $branch->withRelations();
+            }),
+        ];
     }
 
     /**
@@ -70,7 +95,7 @@ class BranchController extends Controller
      */
     public function show(Branch $branch)
     {
-        return $branch;
+        return $branch->withRelations();
     }
 
     /**
@@ -126,7 +151,30 @@ class BranchController extends Controller
 
         $branch->delete();
 
-        return $data;
+        $reorder_result = static::reorder(null, $data['parent_id'], $data['tree_id']);
+
+        list($sorting, $branches) = array_values($reorder_result);
+
+        $trees = collect([]);
+
+        // add affected parent tree
+        if ($data['tree_id']) {
+            $trees->push(Tree::find($data['tree_id']));
+        }
+
+        // add affected parent branch
+        if ($data['parent_id']) {
+            $branches->push(Branch::find($data['parent_id']));
+        }
+
+        return [
+            'trees' => $trees->map(function ($tree) {
+                return $tree->withRelations();
+            }),
+            'branches' => $branches->map(function ($branch) {
+                return $branch->withRelations();
+            }),
+        ];
     }
 
     /**
@@ -167,6 +215,8 @@ class BranchController extends Controller
             return $branch->sorting;
         });
 
+        $affected_branches = collect([]);
+
         // reorder branches
         $index = 0;
         foreach ($branches as $branch) {
@@ -176,13 +226,21 @@ class BranchController extends Controller
                 $new_sorting = $index + 1;
             }
 
-            $branch->update([
-                'sorting' => $new_sorting,
-            ]);
+            // only affect branches whose sorting differs
+            if ($branch->sorting != $new_sorting) {
+                $branch->update([
+                    'sorting' => $new_sorting,
+                ]);
+
+                $affected_branches->push($branch);
+            }
 
             ++$index;
         }
 
-        return $sorting;
+        return [
+            'sorting' => $sorting,
+            'affected_branches' => $affected_branches,
+        ];
     }
 }

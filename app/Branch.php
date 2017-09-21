@@ -25,7 +25,13 @@ class Branch extends BaseModel
      * @var array
      */
     protected $with = [
-        'branches',
+        // 'branches',
+    ];
+
+    static public $load_relations = [
+        'branches:tree_id,parent_id,id',
+        'tree:id',
+        'parent:id'
     ];
 
     /**
@@ -86,5 +92,13 @@ class Branch extends BaseModel
         $rules = array_merge($default_rules, $rules);
 
         return Validator::make($data, $rules);
+    }
+
+    public static function allWithRelations() {
+        return static::with(static::$load_relations)->get();
+    }
+
+    public function withRelations() {
+        return $this->load(static::$load_relations);
     }
 }

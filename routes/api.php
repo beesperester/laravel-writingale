@@ -34,4 +34,7 @@ Route::group(['prefix' => 'v1.0'], function () {
 
     // branch REST interface
     Route::resource('branch', 'v1_0\BranchController');
+
+    // get state
+    Route::get('state', 'v1_0\StateController@index');
 });
