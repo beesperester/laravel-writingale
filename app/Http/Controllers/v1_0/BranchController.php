@@ -44,7 +44,19 @@ class BranchController extends Controller
     public function store(Request $request)
     {
         // get data from request
-        $data = $request->all();
+        // $data = $request->all();
+
+        $update_id = $request->input('update_id');
+
+        $data = [
+            'sorting' => $request->input('sorting'),
+            'parent_id' => $request->input('parent_id'),
+            'tree_id' => $request->input('tree_id'),
+        ];
+
+        $trees = collect([]);
+
+        $branches = collect([]);
 
         // get validator
         $validator = Branch::getValidator($data);
@@ -52,12 +64,24 @@ class BranchController extends Controller
         // validate
         $validator->validate();
 
-        // reorder branches
-        $reorder_result = static::reorder($request->input('sorting'), $request->input('parent_id'), $request->input('tree_id'));
+        $descendant = null;
 
-        list($sorting, $branches) = array_values($reorder_result);
+        if (isset($update_id)) {
+            try {
+                $descendant = Branch::findOrFail($update_id);
 
-        $data['sorting'] = $sorting;
+                // replace sorting with sorting of future descendant
+                $data['sorting'] = $descendant->sorting;
+            } catch (\Exception $e) {
+            }
+        } else {
+            // reorder branches
+            $reorder_result = static::reorder($data['sorting'], $data['parent_id'], $data['tree_id']);
+
+            list($data['sorting'], $branches) = array_values($reorder_result);
+        }
+
+        // $data['sorting'] = $sorting;
 
         // create and return new tree
         $branch = Branch::create($data);
@@ -69,11 +93,22 @@ class BranchController extends Controller
             $branches->push(Branch::find($data['parent_id']));
         }
 
-        // add affected trees
-        $trees = collect([]);
+        // add affected tree
+        
 
         if (isset($data['tree_id'])) {
             $trees->push(Tree::find($data['tree_id']));
+        }
+
+        // update descending branch, if a new ancestor was created
+        if ($descendant) {
+            $descendant->update([
+                'parent_id' => $branch->id,
+                'tree_id' => null,
+                'sorting' => 0,
+            ]);
+
+            $branches->push($descendant);
         }
 
         return [
