@@ -36,7 +36,9 @@ class Branch extends BaseModel
     protected $appends = [
         'depth',
         'hash',
-        'branch_hash'
+        'branch_hash',
+        'unique_sorting',
+        'trail'
     ];
 
     /**
@@ -45,7 +47,7 @@ class Branch extends BaseModel
      * @var array
      */
     public static $load_relations = [
-        'branches:tree_id,parent_id,id',
+        'branches:tree_id,parent_id,id,sorting',
         'tree:id',
     ];
 
@@ -93,6 +95,19 @@ class Branch extends BaseModel
         return 0;
     }
 
+    public function getUniqueSortingAttribute()
+    {
+        $sorting = $this->sorting;
+
+        if ($this->parent_id) {
+            $parent = self::find($this->parent_id);
+
+            $sorting = $sorting + ($parent->unique_sorting * 10);
+        }
+
+        return $sorting;
+    }
+
     /**
      * Return top most branch id.
      *
@@ -104,7 +119,7 @@ class Branch extends BaseModel
             return self::find($this->parent_id)->branch_hash;
         }
 
-        return $this->hash;
+        return $this->node_hash;
     }
 
     /**
@@ -115,6 +130,24 @@ class Branch extends BaseModel
     public function getHashAttribute()
     {
         return call_user_func_array('hashid', array_filter([$this->id, $this->parent_id, $this->tree_id]));
+    }
+
+    public function asdf()
+    {
+        $path = collect([$this]);
+        
+        if ($this->parent_id) {
+            $path = self::find($this->parent_id)->asdf()->merge($path);
+        }
+
+        return $path;
+    }
+
+    public function getTrailAttribute()
+    {
+        return implode('/', $this->asdf()->map(function($branch) {
+            return $branch->hash;
+        })->toArray()); 
     }
 
     /**

@@ -268,6 +268,11 @@ class BranchController extends Controller
                     'sorting' => $new_sorting,
                 ]);
 
+                // get fresh branch
+                $branch = $branch->fresh();
+
+                Log::info($branch->unique_sorting);
+
                 $affected_branches->push($branch);
             }
 
