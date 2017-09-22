@@ -6,6 +6,7 @@ namespace App\Http\Controllers\v1_0;
 use App\Branch;
 use App\Tree;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Log;
 
@@ -94,31 +95,31 @@ class BranchController extends Controller
         }
 
         // add affected tree
-        
 
         if (isset($data['tree_id'])) {
             $trees->push(Tree::find($data['tree_id']));
         }
 
-        // update descending branch, if a new ancestor was created
         if ($descendant) {
+            // update descending branch, if a new ancestor was created
             $descendant->update([
                 'parent_id' => $branch->id,
                 'tree_id' => null,
                 'sorting' => 0,
             ]);
 
-            $branches->push($descendant);
+            // add descending branches to update depth property appropriatly
+            static::addBranches($descendant, $branches);
         }
 
-        return [
+        return response()->json([
             'trees' => $trees->map(function ($tree) {
                 return $tree->withRelations();
             }),
             'branches' => $branches->map(function ($branch) {
                 return $branch->withRelations();
             }),
-        ];
+        ])->setEncodingOptions(JSON_NUMERIC_CHECK);
     }
 
     /**
@@ -202,14 +203,14 @@ class BranchController extends Controller
             $branches->push(Branch::find($data['parent_id']));
         }
 
-        return [
+        return response()->json([
             'trees' => $trees->map(function ($tree) {
                 return $tree->withRelations();
             }),
             'branches' => $branches->map(function ($branch) {
                 return $branch->withRelations();
             }),
-        ];
+        ])->setEncodingOptions(JSON_NUMERIC_CHECK);
     }
 
     /**
@@ -277,5 +278,26 @@ class BranchController extends Controller
             'sorting' => $sorting,
             'affected_branches' => $affected_branches,
         ];
+    }
+
+    /**
+     * Add descending branches to collection.
+     *
+     * @param \App\Branch                    $branch
+     * @param \Illuminate\Support\Collection $branches
+     */
+    public static function addBranches(Branch $branch, Collection $branches)
+    {
+        $in_collection = $branches->contains(function ($current_branch) use ($branch) {
+            return $current_branch->id == $branch->id;
+        });
+
+        if (!$in_collection) {
+            $branches->push($branch);
+        }
+
+        $branch->branches->map(function ($branch) use ($branches) {
+            static::addBranches($branch, $branches);
+        });
     }
 }

@@ -35,6 +35,8 @@ class Branch extends BaseModel
      */
     protected $appends = [
         'depth',
+        'hash',
+        'branch_hash'
     ];
 
     /**
@@ -77,13 +79,42 @@ class Branch extends BaseModel
         return $this->hasMany('App\Branch', 'parent_id');
     }
 
+    /**
+     * Return depth of branch in tree.
+     *
+     * @return int
+     */
     public function getDepthAttribute()
     {
         if ($this->parent_id) {
-            return Branch::find($this->parent_id)->depth + 1;
+            return self::find($this->parent_id)->depth + 1;
         }
 
         return 0;
+    }
+
+    /**
+     * Return top most branch id.
+     *
+     * @return int
+     */
+    public function getBranchHashAttribute()
+    {
+        if ($this->parent_id) {
+            return self::find($this->parent_id)->branch_hash;
+        }
+
+        return $this->hash;
+    }
+
+    /**
+     * Return unique hash for branch.
+     *
+     * @return string
+     */
+    public function getHashAttribute()
+    {
+        return call_user_func_array('hashid', array_filter([$this->id, $this->parent_id, $this->tree_id]));
     }
 
     /**
