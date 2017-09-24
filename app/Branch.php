@@ -34,11 +34,9 @@ class Branch extends BaseModel
      * @var array
      */
     protected $appends = [
-        'depth',
         'hash',
-        'branch_hash',
         'unique_sorting',
-        'trail'
+        'trail',
     ];
 
     /**
@@ -82,19 +80,10 @@ class Branch extends BaseModel
     }
 
     /**
-     * Return depth of branch in tree.
+     * Return calculated unique sorting of branch in relation to all branches.
      *
      * @return int
      */
-    public function getDepthAttribute()
-    {
-        if ($this->parent_id) {
-            return self::find($this->parent_id)->depth + 1;
-        }
-
-        return 0;
-    }
-
     public function getUniqueSortingAttribute()
     {
         $sorting = $this->sorting;
@@ -109,20 +98,6 @@ class Branch extends BaseModel
     }
 
     /**
-     * Return top most branch id.
-     *
-     * @return int
-     */
-    public function getBranchHashAttribute()
-    {
-        if ($this->parent_id) {
-            return self::find($this->parent_id)->branch_hash;
-        }
-
-        return $this->node_hash;
-    }
-
-    /**
      * Return unique hash for branch.
      *
      * @return string
@@ -132,22 +107,32 @@ class Branch extends BaseModel
         return call_user_func_array('hashid', array_filter([$this->id, $this->parent_id, $this->tree_id]));
     }
 
-    public function asdf()
+    /**
+     * Return all branches leading up to this branch.
+     *
+     * @return Illuminate/Support/Collection
+     */
+    public function getTrail()
     {
         $path = collect([$this]);
-        
+
         if ($this->parent_id) {
-            $path = self::find($this->parent_id)->asdf()->merge($path);
+            $path = self::find($this->parent_id)->getTrail()->merge($path);
         }
 
         return $path;
     }
 
+    /**
+     * Return breadcrumb like trail to branch.
+     *
+     * @return string
+     */
     public function getTrailAttribute()
     {
-        return implode('/', $this->asdf()->map(function($branch) {
+        return implode('/', $this->getTrail()->map(function ($branch) {
             return $branch->hash;
-        })->toArray()); 
+        })->toArray());
     }
 
     /**
@@ -179,12 +164,22 @@ class Branch extends BaseModel
 
         return Validator::make($data, $rules);
     }
-
+    
+    /**
+     * Hydrate branch with relations.
+     * 
+     * @return Illuminate\Support\Collection
+     */
     public static function allWithRelations()
     {
         return static::with(static::$load_relations)->get();
     }
 
+    /**
+     * Hydrate branch with relations.
+     * 
+     * @return \App\Branch
+     */
     public function withRelations()
     {
         return $this->load(static::$load_relations);

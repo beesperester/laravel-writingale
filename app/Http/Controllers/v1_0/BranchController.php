@@ -119,6 +119,9 @@ class BranchController extends Controller
             'branches' => $branches->map(function ($branch) {
                 return $branch->withRelations();
             }),
+            'created' => [
+                'branch' => $branch
+            ]
         ])->setEncodingOptions(JSON_NUMERIC_CHECK);
     }
 
@@ -210,6 +213,9 @@ class BranchController extends Controller
             'branches' => $branches->map(function ($branch) {
                 return $branch->withRelations();
             }),
+            'deleted' => [
+                'branch' => $data
+            ]
         ])->setEncodingOptions(JSON_NUMERIC_CHECK);
     }
 

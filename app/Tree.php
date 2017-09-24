@@ -75,10 +75,20 @@ class Tree extends BaseModel
         return Validator::make($data, $rules);
     }
 
+    /**
+     * Hydrate tree with relations.
+     * 
+     * @return Illuminate\Support\Collection
+     */
     public static function allWithRelations() {
         return static::with(static::$load_relations)->get();
     }
     
+    /**
+     * Hydrate branch with relations.
+     * 
+     * @return \App\Branch
+     */
     public function withRelations() {
         return $this->load(static::$load_relations);
     }
